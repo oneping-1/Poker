@@ -1,5 +1,4 @@
 from card import Card
-import sys
 from typing import List
 
 class Deck:
@@ -30,7 +29,7 @@ class Deck:
     def remove_card(self, card:str):
         index = self.check_card(card)
 
-        if index:
+        if index is not None:
             self.cards.pop(index)
         else:
             raise ValueError('index out of range')

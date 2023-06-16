@@ -1,5 +1,4 @@
 from typing import List
-import sys
 import treys
 from card import Card
 from deck import Deck
@@ -45,19 +44,19 @@ class Table:
 
         # need to run this first before checking for card2
         # index might change if you remove a card after checking
-        if card1_index:
+        if card1_index is not None:
             hole_cards[0] = self.deck.cards[card1_index]
             self.deck.remove_card_index(card1_index)
         else:
-            sys.exit(f'Card {hole_cards[0]} not found in deck')
+            raise ValueError(f'Card {hole_cards[0]} not found in deck')
     
         card2_index = self.deck.check_card(hole_cards[1])
 
-        if card2_index:
+        if card2_index is not None:
             hole_cards[1] = self.deck.cards[card2_index]
             self.deck.remove_card_index(card2_index)
         else:
-            sys.exit(f'Card {hole_cards[1]} not found in deck')
+            raise ValueError(f'Card {hole_cards[1]} not found in deck')
 
         self.players[seat_num-1].set_hole(hole_cards)
 
@@ -72,7 +71,7 @@ class Table:
         for card in cards:
             index = self.deck.check_card(card)
 
-            if index:
+            if index is not None:
                 flop_cards.append(self.deck.cards[index])
                 self.deck.remove_card(card)
             else:
@@ -89,7 +88,7 @@ class Table:
 
         index = self.deck.check_card(card)
         
-        if index:
+        if index is not None:
             self.community[3] = self.deck.cards[index]
             self.deck.remove_card_index(index)
         else:
@@ -104,20 +103,20 @@ class Table:
 
         index = self.deck.check_card(card)
 
-        if index:
+        if index is not None:
             self.community[4] = self.deck.cards[index]
             self.deck.remove_card_index(index)
         else:
             raise ValueError(f'card {card} not found in deck')
 
-    def calculate(self) -> dict:
+    def calculate(self):
         """
         calculates winning percentage for each player
         """
         evaluator = treys.Evaluator()
 
         for player in self.players:
-            player.__new_calculation__()
+            player.new_calculation()
 
         rounds = 0
 
@@ -126,20 +125,20 @@ class Table:
         for combo in tqdm(possible_combinations):
 
             for player in self.players:
-                player.__new_combo__
+                player.new_combo()
                 if not player.folded:
-                    player.__hand_score__ = self.get_player_hand_score(evaluator, player.hole, combo)
+                    player.hand_score = self.get_player_hand_score(evaluator, player.hole, combo)
 
             winner_index = self.find_winner()
 
             if winner_index is not None:
-                self.players[winner_index].__round_wins__ += 1
+                self.players[winner_index].round_wins += 1
 
             rounds += 1
 
         for index, player in enumerate(self.players):
-            player.__seat__ = index + 1
-            player.__win_percentage__ = player.__round_wins__ / rounds
+            player.seat = index + 1
+            player.win_percentage = player.round_wins / rounds
 
     def create_itterative_deck(self) -> List[List[Card]]:
         permanent = [card for card in self.community if card is not None]
@@ -150,7 +149,7 @@ class Table:
 
         return possible_combinations
     
-    def get_player_hand_score(self, evaluator:treys.Evaluator(), player_cards:List[Card], community_cards:List[Card]) -> int:
+    def get_player_hand_score(self, evaluator:treys.Evaluator, player_cards:List[Card], community_cards:List[Card]) -> int:
 
         player = [treys.Card.new(card.string) for card in player_cards]
         community = [treys.Card.new(card.string) for card in community_cards]
@@ -158,7 +157,7 @@ class Table:
         return evaluator.evaluate(player, community)
     
     def find_winner(self) -> int:
-        scores = [player.__hand_score__ for player in self.players]
+        scores = [player.hand_score for player in self.players]
 
         sorted_scores = sorted(scores)
 
@@ -179,27 +178,27 @@ def main():
     game.calculate()
 
     for r in game.players:
-        print(f'{r.__seat__}: {r.__win_percentage__*100:5.2f}')
+        print(f'{r.seat}: {r.win_percentage*100:5.2f}')
 
     game.flop(['9c', 'Qh', '5s'])
     game.fold(2)
     game.calculate()
 
     for r in game.players:
-        print(f'{r.__seat__}: {r.__win_percentage__*100:5.2f}')
+        print(f'{r.seat}: {r.win_percentage*100:5.2f}')
 
     game.turn('Jh')
     game.fold(4)
     game.calculate()
 
     for r in game.players:
-        print(f'{r.__seat__}: {r.__win_percentage__*100:5.2f}')
+        print(f'{r.seat}: {r.win_percentage*100:5.2f}')
 
     game.river('3c')
     game.calculate()
 
     for r in game.players:
-        print(f'{r.__seat__}: {r.__win_percentage__*100:6.2f}')
+        print(f'{r.seat}: {r.win_percentage*100:6.2f}')
 
 if __name__ == '__main__':
     main()

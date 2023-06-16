@@ -6,10 +6,10 @@ class Player:
         self.hole: List[Card] = [None, None]
         self.folded = False
 
-        self.__hand_score__ = 1_000_000
-        self.__round_wins__ = 0
-        self.__win_percentage__ = 0
-        self.__seat__ = 0
+        self.hand_score = 1_000_000
+        self.round_wins = 0
+        self.win_percentage = 0
+        self.seat = 0
 
     def set_hole(self, hole_cards:List[Card]):
         self.hole[0:2] = hole_cards.copy()
@@ -21,11 +21,11 @@ class Player:
     def fold(self):
         self.folded = True
 
-    def __new_combo__(self):
-        self.__hand_score__ = 1_000_000
+    def new_combo(self):
+        self.hand_score = 1_000_000
 
-    def __new_calculation__(self):
-        self.__hand_score__ = 1_000_000
-        self.__round_wins__ = 0
-        self.__win_percentage__ = 0
-        self.__seat__ = 0
+    def new_calculation(self):
+        self.hand_score = 1_000_000
+        self.round_wins = 0
+        self.win_percentage = 0
+        self.seat = 0
