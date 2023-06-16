@@ -5,6 +5,10 @@ from deck import Deck
 from player import Player
 import itertools
 from tqdm import tqdm
+from colorama import Fore, just_fix_windows_console
+import random
+
+just_fix_windows_console
 
 class Table:
     def __init__(self, num_players):
@@ -12,11 +16,11 @@ class Table:
 
         i = 0
         while i < num_players:
-            self.players.append(Player())
+            self.players.append(Player(i))
             i += 1
 
         self.deck = Deck()
-        self.community = [None, None, None, None, None]
+        self.community: List[Card] = [None, None, None, None, None]
 
     def new_hand(self):
         for player in self.players:
@@ -122,7 +126,7 @@ class Table:
 
         possible_combinations = self.create_itterative_deck()
 
-        for combo in tqdm(possible_combinations):
+        for combo in possible_combinations:
 
             for player in self.players:
                 player.new_combo()
@@ -169,36 +173,89 @@ class Table:
     def fold(self, seat_num):
         self.players[seat_num-1].fold()
 
+    def print_cards_color(self, colors:int):
+        assert colors == 2 or colors == 4
+
+        community_card_colors = [None, None, None, None, None]
+        
+        if colors == 2:
+            for index, card in enumerate(self.community):
+                if card is not None:
+                    if card.suit == 's' or card.suit == 'c':
+                        community_card_colors[index] = Fore.WHITE
+                    elif card.suit == 'd' or card.suit == 'h':
+                        community_card_colors[index] = Fore.RED
+
+        elif colors == 4:
+            for index, card in enumerate(self.community):
+                if card is not None:
+                    if card.suit == 's':
+                        community_card_colors[index] = Fore.WHITE
+                    elif card.suit == 'd':
+                        community_card_colors[index] = Fore.BLUE
+                    elif card.suit == 'c':
+                        community_card_colors[index] = Fore.GREEN
+                    elif card.suit == 'h':
+                        community_card_colors[index] = Fore.RED
+
+        for index, card in enumerate(self.community):
+            if card is not None:
+                print(f'{community_card_colors[index]}{card.string}{Fore.WHITE}', end=' ')
+
+    def random_hole_cards(self, seat_num:int):
+        for i in range(0,2):
+            index = random.randrange(0, len(self.deck.cards))
+            self.players[seat_num-1].hole[i] = self.deck.cards[index]
+            self.deck.remove_card_index(index)
+
+    def random_flop(self):
+        for i in range(0,3):
+            index = random.randrange(0, len(self.deck.cards))
+            self.community[i] = self.deck.cards[index]
+            self.deck.remove_card_index(index)
+
+    def random_turn(self):
+        index = random.randrange(0, len(self.deck.cards))
+        self.community[3] = self.deck.cards[index]
+        self.deck.remove_card_index(index)
+
+    def random_river(self):
+        index = random.randrange(0, len(self.deck.cards))
+        self.community[4] = self.deck.cards[index]
+        self.deck.remove_card_index(index)
+
 def main():
     game = Table(4)
-    game.set_hole_cards(1, ['As', 'Kd'])
-    game.set_hole_cards(2, ['7s', '2d'])
-    game.set_hole_cards(3, ['Qd', 'Qs'])
-    game.set_hole_cards(4, ['6c', '6h'])
+    game.random_hole_cards(1)
+    game.random_hole_cards(2)
+    game.random_hole_cards(3)
+    game.random_hole_cards(4)
+
+    game.random_flop()
     game.calculate()
 
+    print()
+    game.print_cards_color(4)
+    print()
     for r in game.players:
-        print(f'{r.seat}: {r.win_percentage*100:5.2f}')
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.2f}')
 
-    game.flop(['9c', 'Qh', '5s'])
-    game.fold(2)
+    game.random_turn()
     game.calculate()
 
+    print()
+    game.print_cards_color(4)
+    print()
     for r in game.players:
-        print(f'{r.seat}: {r.win_percentage*100:5.2f}')
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.2f}')
 
-    game.turn('Jh')
-    game.fold(4)
+    game.random_river()
     game.calculate()
-
+    print()
+    game.print_cards_color(4)
+    print()
     for r in game.players:
-        print(f'{r.seat}: {r.win_percentage*100:5.2f}')
-
-    game.river('3c')
-    game.calculate()
-
-    for r in game.players:
-        print(f'{r.seat}: {r.win_percentage*100:6.2f}')
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.2f}')
 
 if __name__ == '__main__':
     main()

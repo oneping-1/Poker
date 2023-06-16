@@ -23,6 +23,9 @@ class Deck:
         for index, card in enumerate(self.cards):
             if card.string == card_str:
                 return index
+            
+        # maybe instead of returning None
+        # return an error and then check for the error
 
         return None
     
