@@ -19,6 +19,9 @@ class Table:
             self.players.append(Player(i))
             i += 1
 
+        for index, player in enumerate(self.players):
+            player.seat = index + 1
+
         self.deck = Deck()
         self.community: List[Card] = [None, None, None, None, None]
 
@@ -142,7 +145,6 @@ class Table:
             rounds += 1
 
         for index, player in enumerate(self.players):
-            player.seat = index + 1
             player.win_percentage = player.round_wins / rounds
 
     def create_itterative_deck(self) -> List[List[treys.Card]]:
@@ -173,7 +175,7 @@ class Table:
     def fold(self, seat_num):
         self.players[seat_num-1].fold()
 
-    def print_cards_color(self, colors:int):
+    def print_community_cards_color(self, colors:int):
         assert colors == 2 or colors == 4
 
         community_card_colors = [None, None, None, None, None]
@@ -202,6 +204,9 @@ class Table:
             if card is not None:
                 print(f'{community_card_colors[index]}{card.string}{Fore.WHITE}', end=' ')
 
+            if (index+1) == len(self.community):
+                print()
+
     def random_hole_cards(self, seat_num:int):
         for i in range(0,2):
             index = random.randrange(0, len(self.deck.cards))
@@ -225,50 +230,49 @@ class Table:
         self.community[4] = self.deck.cards[index]
         self.deck.remove_card_index(index)
 
+    def print_table(self, num_colors=2):
+        print()
+        self.print_community_cards_color(num_colors)
+
+        for player in self.players:
+            if not player.folded:
+                print(f'{player.seat}: {player.print_cards_color(num_colors)} {player.win_percentage*100:6.1f}')
+
 def main():
-    game = Table(4)
+    game = Table(9)
 
     # preflop
     game.random_hole_cards(1)
     game.random_hole_cards(2)
     game.random_hole_cards(3)
     game.random_hole_cards(4)
-    game.calculate()
+    game.random_hole_cards(5)
+    game.random_hole_cards(6)
+    game.random_hole_cards(7)
+    game.random_hole_cards(8)
+    game.random_hole_cards(9)
+    game.print_table(4)
 
-    print()
-    game.print_cards_color(4)
-    print()
-    for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
+    game.fold(3)
+    game.fold(7)
+    game.fold(1)
 
     # flop
     game.random_flop()
+    game.fold(2)
     game.calculate()
-
-    print()
-    game.print_cards_color(4)
-    print()
-    for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
+    game.print_table(4)
 
     # turn
     game.random_turn()
+    game.fold(5)
     game.calculate()
-
-    print()
-    game.print_cards_color(4)
-    print()
-    for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
+    game.print_table(4)
 
     # river
     game.random_river()
     game.calculate()
-    print()
-    game.print_cards_color(4)
-    print()
-    for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
+    game.print_table(4)
 
 if __name__ == '__main__':
     main()
