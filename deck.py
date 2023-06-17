@@ -1,7 +1,19 @@
-from card import Card
+"""
+holds Deck class which:
+handles the deck
+a list of the Card class with some functions
+maybe add a single function to check and remove card in the future
+"""
+
 from typing import List
+from card import Card
 
 class Deck:
+    """
+    handles the deck
+    a list of the Card class with some functions
+    maybe add a function to check and remove card in the future
+    """
     def __init__(self):
         ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
         suits = ['s', 'd', 'c', 'h']
@@ -23,22 +35,15 @@ class Deck:
         for index, card in enumerate(self.cards):
             if card.string == card_str:
                 return index
-            
+
         # maybe instead of returning None
         # return an error and then check for the error
 
         return None
-    
-    def remove_card(self, card:str):
-        index = self.check_card(card)
-
-        if index is not None:
-            self.cards.pop(index)
-        else:
-            raise ValueError('index out of range')
 
     def remove_card_index(self, index:int):
-        try:
-            self.cards.pop(index)
-        except IndexError:
-            raise ValueError('index out of range')
+        """
+        removes card based off the index
+        the index can be found from the check_card() function
+        """
+        self.cards.pop(index)

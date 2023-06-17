@@ -1,16 +1,27 @@
+"""
+main function where everything comes together
+biggest part is that it calculates odds of winning the hand
+"""
+
 from typing import List
+import itertools
+import random
 import treys
+from colorama import Fore, just_fix_windows_console
+from tqdm import tqdm
 from card import Card
 from deck import Deck
 from player import Player
-import itertools
-from tqdm import tqdm
-from colorama import Fore, just_fix_windows_console
-import random
 
-just_fix_windows_console
+just_fix_windows_console()
+
+# need to figure out what to do in a tie after river
 
 class Table:
+    """
+    method represents everything that is going on
+    deck, players, community cards
+    """
     def __init__(self, num_players):
         self.players: List[Player] = []
 
@@ -26,9 +37,13 @@ class Table:
         self.community: List[Card] = [None, None, None, None, None]
 
     def new_hand(self):
+        """
+        function is used after each hand is completed
+        resets deck and each players hole cards
+        """
         for player in self.players:
             player.new_hand()
-        
+
         self.deck = Deck()
 
     def set_hole_cards(self, seat_num:int, hole_cards:List[str]):
@@ -56,7 +71,7 @@ class Table:
             self.deck.remove_card_index(card1_index)
         else:
             raise ValueError(f'Card {hole_cards[0]} not found in deck')
-    
+
         card2_index = self.deck.check_card(hole_cards[1])
 
         if card2_index is not None:
@@ -65,7 +80,7 @@ class Table:
         else:
             raise ValueError(f'Card {hole_cards[1]} not found in deck')
 
-        self.players[seat_num-1].set_hole(hole_cards)
+        self.players[seat_num-1].hole = hole_cards.copy()
         self.players[seat_num-1].treys()
 
     def flop(self, cards:List[str]):
@@ -74,14 +89,14 @@ class Table:
         """
         assert isinstance(cards, list)
         assert len(cards) == 3
-        
+
         flop_cards = []
         for card in cards:
             index = self.deck.check_card(card)
 
             if index is not None:
                 flop_cards.append(self.deck.cards[index])
-                self.deck.remove_card(card)
+                self.deck.remove_card_index(index)
             else:
                 raise ValueError(f'Card {card} not found in deck')
 
@@ -95,13 +110,13 @@ class Table:
         assert isinstance(card, str)
 
         index = self.deck.check_card(card)
-        
+
         if index is not None:
             self.community[3] = self.deck.cards[index]
             self.deck.remove_card_index(index)
         else:
             raise ValueError(f'card {card} not found in deck')
-        
+
     def river(self, card:str):
         """
         check river cards, places on table
@@ -128,9 +143,9 @@ class Table:
 
         rounds = 0
 
-        possible_combinations = self.create_itterative_deck()
+        possible_combinations = self.create_iterative_deck()
 
-        for combo in (possible_combinations):
+        for combo in tqdm(possible_combinations):
 
             for player in self.players:
                 player.new_combo()
@@ -144,25 +159,37 @@ class Table:
 
             rounds += 1
 
-        for index, player in enumerate(self.players):
+        for player in self.players:
             player.win_percentage = player.round_wins / rounds
 
-    def create_itterative_deck(self) -> List[List[treys.Card]]:
-        permanent: List[treys.Card] = [treys.Card.new(card.string) for card in self.community if card is not None]
+    def create_iterative_deck(self) -> List[List[treys.Card]]:
+        """
+        creates a list of all possible community card runouts
+        """
+        permanent_community_cards: List[treys.Card] = []
 
-        combos = itertools.combinations(self.deck.cards, 5 - len(permanent))
+        for card in self.community:
+            if card is not None:
+                permanent_community_cards.append(treys.Card.new(card.string))
+
+        combos = itertools.combinations(self.deck.cards, 5 - len(permanent_community_cards))
         possible_combinations = []
 
         for combo in combos:
-            temp_list = []
+            temporary_community_cards = []
             for card in combo:
-                temp_list.append(treys.Card.new(card.string))
-                
-            possible_combinations.append(permanent + temp_list)
+                temporary_community_cards.append(treys.Card.new(card.string))
+
+            possible_combinations.append(permanent_community_cards + temporary_community_cards)
 
         return possible_combinations
-    
+
     def find_winner(self) -> int:
+        """
+        finds the winner based of each players hand
+        returns None if there is a tie
+        returns seat index (seat num - 1) if no tie
+        """
         scores = [player.hand_score for player in self.players]
 
         sorted_scores = sorted(scores)
@@ -171,15 +198,22 @@ class Table:
             return None
         else:
             return scores.index(sorted_scores[0])
-        
+
     def fold(self, seat_num):
+        """
+        folds the player for given seat number
+        """
         self.players[seat_num-1].fold()
 
     def print_community_cards_color(self, colors:int):
+        """
+        prints everything on the table
+        community cards, each players hole cards and win percentage
+        """
         assert colors == 2 or colors == 4
 
         community_card_colors = [None, None, None, None, None]
-        
+
         if colors == 2:
             for index, card in enumerate(self.community):
                 if card is not None:
@@ -208,6 +242,9 @@ class Table:
                 print()
 
     def random_hole_cards(self, seat_num:int):
+        """
+        gives a given player random hole cards
+        """
         for i in range(0,2):
             index = random.randrange(0, len(self.deck.cards))
             self.players[seat_num-1].hole[i] = self.deck.cards[index]
@@ -215,33 +252,54 @@ class Table:
         self.players[seat_num-1].treys()
 
     def random_flop(self):
+        """
+        creates a flop with random cards
+        """
         for i in range(0,3):
             index = random.randrange(0, len(self.deck.cards))
             self.community[i] = self.deck.cards[index]
             self.deck.remove_card_index(index)
 
     def random_turn(self):
+        """
+        creates a turn with a random card
+        """
         index = random.randrange(0, len(self.deck.cards))
         self.community[3] = self.deck.cards[index]
         self.deck.remove_card_index(index)
 
     def random_river(self):
+        """
+        creates a river with a random card
+        """
         index = random.randrange(0, len(self.deck.cards))
         self.community[4] = self.deck.cards[index]
         self.deck.remove_card_index(index)
 
     def print_table(self, num_colors=2):
+        """
+        prints community cards and player hole cards
+        also prints each players odds of winning hand
+        """
         print()
         self.print_community_cards_color(num_colors)
 
         for player in self.players:
             if not player.folded:
-                print(f'{player.seat}: {player.print_cards_color(num_colors)} {player.win_percentage*100:6.1f}')
+                seat = player.seat
+                hole_cards = player.print_cards_color(num_colors)
+                win_percentage = player.win_percentage
+
+                print(f'{seat:2d}: {hole_cards} {win_percentage:6.1f}')
 
 def main():
+    """
+    main function to check for obvious errors
+    and check math with online calculators
+    """
     game = Table(9)
 
-    # preflop
+    # pre-flop
     game.random_hole_cards(1)
     game.random_hole_cards(2)
     game.random_hole_cards(3)
