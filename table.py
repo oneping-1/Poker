@@ -2,7 +2,7 @@ from typing import List
 import treys
 from card import Card
 from deck import Deck
-from player2 import Player
+from player import Player
 import itertools
 from tqdm import tqdm
 from colorama import Fore, just_fix_windows_console
@@ -127,7 +127,7 @@ class Table:
 
         possible_combinations = self.create_itterative_deck()
 
-        for combo in tqdm(possible_combinations):
+        for combo in (possible_combinations):
 
             for player in self.players:
                 player.new_combo()
