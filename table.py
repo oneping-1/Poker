@@ -2,7 +2,7 @@ from typing import List
 import treys
 from card import Card
 from deck import Deck
-from player import Player
+from player2 import Player
 import itertools
 from tqdm import tqdm
 from colorama import Fore, just_fix_windows_console
@@ -63,6 +63,7 @@ class Table:
             raise ValueError(f'Card {hole_cards[1]} not found in deck')
 
         self.players[seat_num-1].set_hole(hole_cards)
+        self.players[seat_num-1].treys()
 
     def flop(self, cards:List[str]):
         """
@@ -126,12 +127,12 @@ class Table:
 
         possible_combinations = self.create_itterative_deck()
 
-        for combo in possible_combinations:
+        for combo in tqdm(possible_combinations):
 
             for player in self.players:
                 player.new_combo()
                 if not player.folded:
-                    player.hand_score = self.get_player_hand_score(evaluator, player.hole, combo)
+                    player.hand_score = evaluator.evaluate(player.hole_treys, combo)
 
             winner_index = self.find_winner()
 
@@ -144,21 +145,20 @@ class Table:
             player.seat = index + 1
             player.win_percentage = player.round_wins / rounds
 
-    def create_itterative_deck(self) -> List[List[Card]]:
-        permanent = [card for card in self.community if card is not None]
+    def create_itterative_deck(self) -> List[List[treys.Card]]:
+        permanent: List[treys.Card] = [treys.Card.new(card.string) for card in self.community if card is not None]
 
         combos = itertools.combinations(self.deck.cards, 5 - len(permanent))
+        possible_combinations = []
 
-        possible_combinations = [permanent + list(combo) for combo in combos]
+        for combo in combos:
+            temp_list = []
+            for card in combo:
+                temp_list.append(treys.Card.new(card.string))
+                
+            possible_combinations.append(permanent + temp_list)
 
         return possible_combinations
-    
-    def get_player_hand_score(self, evaluator:treys.Evaluator, player_cards:List[Card], community_cards:List[Card]) -> int:
-
-        player = [treys.Card.new(card.string) for card in player_cards]
-        community = [treys.Card.new(card.string) for card in community_cards]
-
-        return evaluator.evaluate(player, community)
     
     def find_winner(self) -> int:
         scores = [player.hand_score for player in self.players]
@@ -207,6 +207,7 @@ class Table:
             index = random.randrange(0, len(self.deck.cards))
             self.players[seat_num-1].hole[i] = self.deck.cards[index]
             self.deck.remove_card_index(index)
+        self.players[seat_num-1].treys()
 
     def random_flop(self):
         for i in range(0,3):
@@ -226,11 +227,21 @@ class Table:
 
 def main():
     game = Table(4)
+
+    # preflop
     game.random_hole_cards(1)
     game.random_hole_cards(2)
     game.random_hole_cards(3)
     game.random_hole_cards(4)
+    game.calculate()
 
+    print()
+    game.print_cards_color(4)
+    print()
+    for r in game.players:
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
+
+    # flop
     game.random_flop()
     game.calculate()
 
@@ -238,8 +249,9 @@ def main():
     game.print_cards_color(4)
     print()
     for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.2f}')
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
 
+    # turn
     game.random_turn()
     game.calculate()
 
@@ -247,15 +259,16 @@ def main():
     game.print_cards_color(4)
     print()
     for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.2f}')
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
 
+    # river
     game.random_river()
     game.calculate()
     print()
     game.print_cards_color(4)
     print()
     for r in game.players:
-        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.2f}')
+        print(f'{r.seat}: {r.print_cards_color(4)} {r.win_percentage*100:6.1f}')
 
 if __name__ == '__main__':
     main()

@@ -1,14 +1,19 @@
 from card import Card
 from typing import List
 from colorama import Fore, just_fix_windows_console
+import treys
+from treys import Card
 
 just_fix_windows_console
 
 class Player:
     def __init__(self, seat_num:int):
         self.hole: List[Card] = [None, None]
+        self.hole_treys: List[treys.Card] = []
         self.folded = False
         self.seat = seat_num
+        self.final_hand_name = None
+        self.final_hand_score = None
 
         self.hand_score = 1_000_000
         self.round_wins = 0
@@ -19,7 +24,10 @@ class Player:
     
     def new_hand(self):
         self.hole = [None, None]
+        self.hole_treys = []
         self.folded = False
+        self.final_hand_name = None
+        self.final_hand_score = None
 
     def fold(self):
         self.folded = True
@@ -64,3 +72,5 @@ class Player:
 
         return final
             
+    def treys(self):
+        [self.hole_treys.append(treys.Card.new(card.string)) for card in self.hole]
