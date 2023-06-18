@@ -2,3 +2,5 @@
 test.ipynb
 table2.py
 player2.py
+__pycache__
+.pytest_cache
