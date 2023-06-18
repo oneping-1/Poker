@@ -1,6 +1,7 @@
 """
 main function where everything comes together
 biggest part is that it calculates odds of winning the hand
+want to calculate each players outs cards in the future
 """
 
 from typing import List
@@ -133,11 +134,13 @@ class Table:
         else:
             raise ValueError(f'card {card} not found in deck')
 
-    def calculate(self):
+    def calculate(self) -> List[float]:
         """
         calculates winning percentage for each player
+        returns a list of floats but only used for pytests
         """
         evaluator = treys.Evaluator()
+        win_percentages = []
 
         for player in self.players:
             player.new_calculation()
@@ -162,6 +165,9 @@ class Table:
 
         for player in self.players:
             player.win_percentage = player.round_wins / rounds
+            win_percentages.append(player.win_percentage)
+
+        return win_percentages
 
     def create_iterative_deck(self) -> List[List[treys.Card]]:
         """
