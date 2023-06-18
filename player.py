@@ -23,6 +23,7 @@ class Player:
         self.seat = seat_num
         self.final_hand_name = None
         self.final_hand_score = None
+        self.round_won = False
 
         self.hand_score = 1_000_000
         self.round_wins = 0
@@ -38,6 +39,7 @@ class Player:
         self.folded = False
         self.final_hand_name = None
         self.final_hand_score = None
+        self.round_won = False
 
     def fold(self):
         """

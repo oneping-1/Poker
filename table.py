@@ -6,6 +6,7 @@ biggest part is that it calculates odds of winning the hand
 from typing import List
 import itertools
 import random
+import copy
 import treys
 from colorama import Fore, just_fix_windows_console
 from tqdm import tqdm
@@ -199,6 +200,44 @@ class Table:
         else:
             return scores.index(sorted_scores[0])
 
+    def monte_carlo(self, num_runs=1500):
+        """
+        used to calculate odds preflop
+        due to intense computation to run through
+        all combinations of possible
+        community cards
+        """
+        evaluator = treys.Evaluator()
+
+        for player in self.players:
+            player.new_calculation()
+
+        permanent_community = self.community.copy()
+
+        permanent_community_treys = []
+        for card in permanent_community:
+            if card is not None:
+                permanent_community_treys.append(treys.Card.new(card.string))
+
+        for _ in tqdm(range(0, num_runs)):
+            temp_community_treys = permanent_community_treys.copy()
+            temp_deck = copy.deepcopy(self.deck)
+            while len(temp_community_treys) < 5:
+                card = temp_deck.random_card()
+                temp_community_treys.append(treys.Card.new(card.string))
+
+            for player in self.players:
+                player.new_combo()
+                player.hand_score = evaluator.evaluate(player.hole_treys, temp_community_treys)
+
+            winner_index = self.find_winner()
+
+            if winner_index is not None:
+                self.players[winner_index].round_wins += 1
+
+        for player in self.players:
+            player.win_percentage = player.round_wins / num_runs
+
     def fold(self, seat_num):
         """
         folds the player for given seat number
@@ -210,7 +249,7 @@ class Table:
         prints everything on the table
         community cards, each players hole cards and win percentage
         """
-        assert colors == 2 or colors == 4
+        assert colors in (2, 4)
 
         community_card_colors = [None, None, None, None, None]
 
@@ -290,7 +329,7 @@ class Table:
                 hole_cards = player.print_cards_color(num_colors)
                 win_percentage = player.win_percentage
 
-                print(f'{seat:2d}: {hole_cards} {win_percentage:6.1f}')
+                print(f'{seat:2d}: {hole_cards} {win_percentage*100:6.1f}')
 
 def main():
     """
@@ -309,11 +348,8 @@ def main():
     game.random_hole_cards(7)
     game.random_hole_cards(8)
     game.random_hole_cards(9)
+    game.monte_carlo()
     game.print_table(4)
-
-    game.fold(3)
-    game.fold(7)
-    game.fold(1)
 
     # flop
     game.random_flop()

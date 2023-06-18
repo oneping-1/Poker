@@ -6,6 +6,7 @@ maybe add a single function to check and remove card in the future
 """
 
 from typing import List
+import random
 from card import Card
 
 class Deck:
@@ -47,3 +48,14 @@ class Deck:
         the index can be found from the check_card() function
         """
         self.cards.pop(index)
+
+    def random_card(self) -> Card:
+        """
+        returns a random card from the deck
+        and remove it from the deck
+        """
+        index = random.randrange(0, len(self.cards))
+        card = self.cards[index]
+        self.cards.pop(index)
+
+        return card
