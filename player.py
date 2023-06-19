@@ -19,10 +19,13 @@ class Player:
     def __init__(self, seat_num:int):
         self.hole: List[Card] = [None, None]
         self.hole_treys: List[treys.Card] = []
-        self.folded = False
+        self.folded = True
         self.seat = seat_num
         self.final_hand_name = None
-        self.final_hand_score = None
+        self.final_hand_score = 1_000_000
+        self.outs: List[Card] = []
+
+        # can handle ties
         self.round_won = False
 
         self.hand_score = 1_000_000
@@ -38,7 +41,7 @@ class Player:
         self.hole_treys = []
         self.folded = False
         self.final_hand_name = None
-        self.final_hand_score = None
+        self.final_hand_score = 1_000_000
         self.round_won = False
 
     def fold(self):
