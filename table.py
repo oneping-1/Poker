@@ -6,7 +6,6 @@ want to calculate each players outs cards in the future
 
 from typing import List
 import itertools
-import random
 import copy
 import treys
 from colorama import Fore, just_fix_windows_console
@@ -17,18 +16,19 @@ from player import Player
 
 just_fix_windows_console()
 
-# need to figure out what to do in a tie after river
-
 class Table:
     """
     method represents everything that is going on
     deck, players, community cards
     """
-    def __init__(self, num_players):
+    def __init__(self, num_players:int):
+        assert isinstance(num_players, int)
+        assert num_players > 0
+
         self.players: List[Player] = []
 
-        i = 0
-        while i < num_players:
+        i = 1
+        while i <= num_players:
             self.players.append(Player(i))
             i += 1
 
@@ -38,7 +38,7 @@ class Table:
         self.deck = Deck()
         self.community: List[Card] = [None, None, None, None, None]
         self._community_treys: List[treys.Card] = []
-        self._num_winners = 0
+        self._num_winners: int = 0
 
     def _create_community_treys(self):
         self._community_treys: List[treys.Card] = []
@@ -67,125 +67,83 @@ class Table:
         """
         checks if both cards exist before giving them to a player
         """
-
         assert isinstance(seat_num, int)
         assert isinstance(hole_cards, list)
         assert len(hole_cards) == 2
 
-        card1_index = self.deck.check_card(hole_cards[0])
-
-        # need to run this first before checking for card2
-        # index might change if you remove a card after checking
-        if card1_index is not None:
-            hole_cards[0] = self.deck.cards[card1_index]
-            self.deck.remove_card_index(card1_index)
-        else:
-            raise ValueError(f'Card {hole_cards[0]} not found in deck')
-
-        card2_index = self.deck.check_card(hole_cards[1])
-
-        if card2_index is not None:
-            hole_cards[1] = self.deck.cards[card2_index]
-            self.deck.remove_card_index(card2_index)
-        else:
-            raise ValueError(f'Card {hole_cards[1]} not found in deck')
-        
+        hole_card_objects = []
+        hole_card_objects.append(self.deck.remove_card_from_deck(card_str=hole_cards[0]))
+        hole_card_objects.append(self.deck.remove_card_from_deck(card_str=hole_cards[1]))
 
         self.players[seat_num-1].folded = False
-        self.players[seat_num-1].hole = hole_cards.copy()
-        self.players[seat_num-1].treys()
+        self.players[seat_num-1].set_hole_cards(hole_card_objects)
 
     def random_hole_cards(self, seat_num:int):
         """
         gives a given player random hole cards
         """
-        for i in range(0,2):
-            index = random.randrange(0, len(self.deck.cards))
-            self.players[seat_num-1].hole[i] = self.deck.cards[index]
-            self.deck.remove_card_index(index)
-        self.players[seat_num-1].treys()
+        hole_cards = []
+        for _ in range(0,2):
+            hole_cards.append(self.deck.remove_card_from_deck(card_random=True))
+        self.players[seat_num-1].set_hole_cards(hole_cards)
 
-    def flop(self, cards:List[str]):
+    def flop(self, card_strs:List[str]):
         """
         checks flop cards, places them on table
         """
-        assert isinstance(cards, list)
-        assert len(cards) == 3
+        assert isinstance(card_strs, list)
+        assert len(card_strs) == 3
 
         flop_cards = []
-        for card in cards:
-            index = self.deck.check_card(card)
-
-            if index is not None:
-                flop_cards.append(self.deck.cards[index])
-                self.deck.remove_card_index(index)
-            else:
-                raise ValueError(f'Card {card} not found in deck')
+        for card in card_strs:
+            flop_cards.append(self.deck.remove_card_from_deck(card_str=card))
 
         self.community[0:3] = flop_cards.copy()
+        self._create_community_treys()
 
     def random_flop(self):
         """
         creates a flop with random cards
         """
-        for i in range(0,3):
-            index = random.randrange(0, len(self.deck.cards))
-            self.community[i] = self.deck.cards[index]
-            self.deck.remove_card_index(index)
+        flop_cards = []
+        for _ in range(0,3):
+            flop_cards.append = self.deck.remove_card_from_deck(card_random=True)
 
+        self.community[0:3] = flop_cards.copy()
 
-    def turn(self, card:str):
+    def turn(self, card_str:str):
         """
         checks turn card, places on table
         """
-
-        assert isinstance(card, str)
-
-        index = self.deck.check_card(card)
-
-        if index is not None:
-            self.community[3] = self.deck.cards[index]
-            self.deck.remove_card_index(index)
-        else:
-            raise ValueError(f'card {card} not found in deck')
+        assert isinstance(card_str, str)
+        self.community[3] = self.deck.remove_card_from_deck(card_str=card_str)
+        self._create_community_treys()
 
     def random_turn(self):
         """
         creates a turn with a random card
         """
-        index = random.randrange(0, len(self.deck.cards))
-        self.community[3] = self.deck.cards[index]
-        self.deck.remove_card_index(index)
+        self.community[3] = self.deck.remove_card_from_deck(card_random=True)
 
-    def river(self, card:str):
+    def river(self, card_str:str):
         """
         check river cards, places on table
         """
-
-        assert isinstance(card, str)
-
-        index = self.deck.check_card(card)
-
-        if index is not None:
-            self.community[4] = self.deck.cards[index]
-            self.deck.remove_card_index(index)
-        else:
-            raise ValueError(f'card {card} not found in deck')
+        assert isinstance(card_str, str)
+        self.community[4] = self.deck.remove_card_from_deck(card_str=card_str)
+        self._create_community_treys()
 
     def random_river(self):
         """
         creates a river with a random card
         """
-        index = random.randrange(0, len(self.deck.cards))
-        self.community[4] = self.deck.cards[index]
-        self.deck.remove_card_index(index)
+        self.community[4] = self.deck.remove_card_from_deck(card_random=True)
 
     def calculate(self) -> List[float]:
         """
         calculates winning percentage for each player
         returns a list of floats but only used for pytests
         """
-        self._create_community_treys()
         evaluator = treys.Evaluator()
         win_percentages: List[float] = []
 
@@ -276,7 +234,7 @@ class Table:
             temp_community_treys = permanent_community_treys.copy()
             temp_deck = copy.deepcopy(self.deck)
             while len(temp_community_treys) < 5:
-                card = temp_deck.random_card()
+                card = temp_deck.remove_card_from_deck(card_random=True)
                 temp_community_treys.append(treys.Card.new(card.string))
 
             for player in self.players:

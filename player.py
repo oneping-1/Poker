@@ -17,9 +17,12 @@ class Player:
     hole cards, fold status, win percentage
     """
     def __init__(self, seat_num:int):
-        self.hole: List[Card] = [None, None]
+        assert isinstance(seat_num, int)
+        assert seat_num > 0
+
+        self.hole_cards: List[Card] = [None, None]
         self.hole_treys: List[treys.Card] = []
-        self.folded = True
+        self.folded = False
         self.seat = seat_num
         self.final_hand_name = None
         self.final_hand_score = 1_000_000
@@ -37,7 +40,7 @@ class Player:
         gets the player ready for a new hand
         resets hole cards, fold status, and hand score
         """
-        self.hole = [None, None]
+        self.hole_cards = [None, None]
         self.hole_treys = []
         self.folded = False
         self.final_hand_name = None
@@ -49,6 +52,18 @@ class Player:
         makes the fold status true
         """
         self.folded = True
+
+    def set_hole_cards(self, hole_cards:List[Card]):
+        """
+        sets the hole cards for the player and creates treys object
+        """
+        assert isinstance(hole_cards, List)
+        assert len(hole_cards) == 2
+
+        for index, card in enumerate(hole_cards):
+            self.hole_cards[index] = card
+
+        self.treys()
 
     def new_combo(self):
         """
@@ -81,14 +96,14 @@ class Player:
             hole_card_colors = [Fore.WHITE, Fore.WHITE].copy()
 
         if colors == 2:
-            for index, card in enumerate(self.hole):
+            for index, card in enumerate(self.hole_cards):
                 if card.suit == 's' or card.suit == 'c':
                     hole_card_colors[index] = Fore.WHITE
                 elif card.suit == 'd' or card.suit == 'h':
                     hole_card_colors[index] = Fore.RED
 
         elif colors == 4:
-            for index, card in enumerate(self.hole):
+            for index, card in enumerate(self.hole_cards):
                 if card.suit == 's':
                     hole_card_colors[index] = Fore.WHITE
                 elif card.suit == 'd':
@@ -98,10 +113,10 @@ class Player:
                 elif card.suit == 'h':
                     hole_card_colors[index] = Fore.RED
 
-        for index, card in enumerate(self.hole):
+        for index, card in enumerate(self.hole_cards):
             final += f'{hole_card_colors[index]}{card.string}{Fore.WHITE}'
 
-            if (index + 1) != len(self.hole):
+            if (index + 1) != len(self.hole_cards):
                 final += ' '
 
         return final
@@ -113,5 +128,5 @@ class Player:
         new treys.Card instance for each combination of community cards
         """
 
-        for card in self.hole:
+        for card in self.hole_cards:
             self.hole_treys.append(treys.Card.new(card.string))

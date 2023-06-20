@@ -20,10 +20,13 @@ class Deck:
         suits = ['s', 'd', 'c', 'h']
 
         self.cards: List[Card] = []
+        self.dead_cards: List[Card] = []
 
+        i = 0
         for rank in ranks:
             for suit in suits:
-                self.cards.append(Card(rank, suit))
+                self.cards.append(Card(rank, suit, i))
+                i += 1
 
     def check_card(self, card_str:str):
         """
@@ -42,20 +45,31 @@ class Deck:
 
         return None
 
-    def remove_card_index(self, index:int):
+    def remove_card_from_deck(self, *,card_str:str = None, card_index:int = None, card_random:bool = None):
         """
-        removes card based off the index
-        the index can be found from the check_card() function
+        removes a card from the deck from the card string or randomly
         """
-        self.cards.pop(index)
+        card = None
 
-    def random_card(self) -> Card:
-        """
-        returns a random card from the deck
-        and remove it from the deck
-        """
-        index = random.randrange(0, len(self.cards))
-        card = self.cards[index]
-        self.cards.pop(index)
+        if card_str is not None:
+            for index, cards in enumerate(self.cards):
+                if cards.string == card_str:
+                    card = cards
+                    card_index = index
+                    self.cards.pop(index)
+                    self.dead_cards.append(card)
+                    return card
+            raise ValueError(f'card {card_str} not found in deck')
 
-        return card
+        if card_index is not None:
+            card = self.cards[card_index]
+            self.cards.pop(card_index)
+            self.dead_cards.append(card)
+            return card
+
+        if card_random is True:
+            index = random.randrange(0, len(self.cards))
+            card = self.cards[index]
+            self.cards.pop(index)
+            self.dead_cards.append(card)
+            return card

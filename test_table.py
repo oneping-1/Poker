@@ -1,7 +1,7 @@
 import pytest
 from table import Table
 
-def test_win_percentages_01():
+def test_table_01():
     """
     first test to make sure it works
     """
@@ -35,7 +35,7 @@ def test_win_percentages_01():
     assert odds[0] == 0
     assert odds[1] == 1
 
-def test_win_percentages_02():
+def test_table_02():
     """
     check folds
     """
@@ -96,7 +96,7 @@ def test_win_percentages_02():
     assert odds[4] == 0
     assert odds[5] == pytest.approx(.1667, abs=1e-3)
 
-def test_win_percentages_03():
+def test_table_03():
     """
     checks tie logics
     """
@@ -116,7 +116,7 @@ def test_win_percentages_03():
     assert odds[0] == 0
     assert poker.find_winner() == 2
 
-def test_win_percentages_04():
+def test_table_04():
     """
     Hustler Casino Live J4 Hand
     """
