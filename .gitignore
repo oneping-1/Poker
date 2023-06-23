@@ -5,3 +5,4 @@ player2.py
 __pycache__/
 .pytest_cache/
 .vscode/
+.gitattributes/
