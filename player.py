@@ -24,16 +24,24 @@ class Player:
         self.hole_treys: List[treys.Card] = []
         self.folded = False
         self.seat = seat_num
-        self.final_hand_name = None
-        self.final_hand_score = 1_000_000
+        self.hand_name = None
+        self.hand_score = 1_000_000
         self.outs: List[Card] = []
+        self.outs_string: List[str] = []
+        self.name: str = None
 
         # can handle ties
         self.round_won = False
 
-        self.hand_score = 1_000_000
+        self.temp_hand_score = 1_000_000
         self.round_wins = 0
         self.win_percentage = 0
+
+    def set_name(self, name_str:str):
+        """
+        sets the players name
+        """
+        self.name = name_str
 
     def new_hand(self):
         """
@@ -43,9 +51,10 @@ class Player:
         self.hole_cards = [None, None]
         self.hole_treys = []
         self.folded = False
-        self.final_hand_name = None
-        self.final_hand_score = 1_000_000
+        self.hand_name = None
+        self.hand_score = 1_000_000
         self.round_won = False
+        self.outs: List[Card] = []
 
     def fold(self):
         """
@@ -69,14 +78,14 @@ class Player:
         """
         resets the hand score for each combination of community cards
         """
-        self.hand_score = 1_000_000
+        self.temp_hand_score = 1_000_000
 
     def new_calculation(self):
         """
         resets the round wins and win percentage
         for a new calculation
         """
-        self.hand_score = 1_000_000
+        self.temp_hand_score = 1_000_000
         self.round_wins = 0
         self.win_percentage = 0
 
@@ -120,6 +129,14 @@ class Player:
                 final += ' '
 
         return final
+
+    def calculate_outs_strings(self):
+        """
+        calculates the strings for out cards for unit tests
+        returns list for testing
+        """
+        for card in self.outs:
+            self.outs_string.append(card.string)
 
     def treys(self):
         """

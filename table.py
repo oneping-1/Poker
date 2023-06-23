@@ -39,6 +39,7 @@ class Table:
         self.community: List[Card] = [None, None, None, None, None]
         self._community_treys: List[treys.Card] = []
         self._num_winners: int = 0
+        self._evaluator: treys.Evaluator = treys.Evaluator()
 
     def _create_community_treys(self):
         self._community_treys: List[treys.Card] = []
@@ -107,7 +108,7 @@ class Table:
         """
         flop_cards = []
         for _ in range(0,3):
-            flop_cards.append = self.deck.remove_card_from_deck(card_random=True)
+            flop_cards.append(self.deck.remove_card_from_deck(card_random=True))
 
         self.community[0:3] = flop_cards.copy()
 
@@ -163,7 +164,7 @@ class Table:
             for player in self.players:
                 player.new_combo()
                 if not player.folded:
-                    player.hand_score = evaluator.evaluate(player.hole_treys, combo)
+                    player.temp_hand_score = evaluator.evaluate(player.hole_treys, combo)
 
             winner_index = self._find_lowest_score()
 
@@ -200,7 +201,7 @@ class Table:
         returns None if there is a tie
         returns seat index (seat num - 1) if no tie
         """
-        scores = [player.hand_score for player in self.players]
+        scores = [player.temp_hand_score for player in self.players]
 
         sorted_scores = sorted(scores)
 
@@ -217,6 +218,8 @@ class Table:
         community cards
         """
         evaluator = treys.Evaluator()
+        t_e = evaluator
+
         win_percentages: List[float] = []
 
         for player in self.players:
@@ -240,7 +243,7 @@ class Table:
             for player in self.players:
                 player.new_combo()
                 if not player.folded:
-                    player.hand_score = evaluator.evaluate(player.hole_treys, temp_community_treys)
+                    player.temp_hand_score = t_e.evaluate(player.hole_treys, temp_community_treys)
 
             winner_index = self._find_lowest_score()
 
@@ -253,6 +256,41 @@ class Table:
 
         return win_percentages
 
+    def find_outs(self):
+        """
+        finds the river card each player would need to win the hand
+        """
+        self._create_community_treys()
+        assert len(self._community_treys) == 4
+
+        temp_community_treys = self._community_treys.copy()
+        temp_community_treys.append(None)
+        assert len(temp_community_treys) == 5
+
+        for card in self.deck.cards:
+            temp_community_treys[4] = treys.Card.new(card.string)
+            winner_index = self._find_outs_winner(temp_community_treys)
+
+            if winner_index is not None:
+                self.players[winner_index].outs.append(card)
+
+        for player in self.players:
+            player.calculate_outs_strings()
+
+    def _find_outs_winner(self, community_cards: List[treys.Card]) -> int:
+        lowest_score = 10_000_000
+
+        for index, player in enumerate(self.players):
+            if player.folded is False:
+                player.temp_hand_score = self._evaluator.evaluate(player.hole_treys, community_cards)
+                if player.temp_hand_score < lowest_score:
+                    lowest_score = player.temp_hand_score
+                    lowest_score_index = index
+                elif player.temp_hand_score == lowest_score:
+                    lowest_score_index = None
+
+        return lowest_score_index
+
     def find_winner(self) -> int:
         """
         finds the winner of the hand
@@ -263,22 +301,20 @@ class Table:
         self._create_community_treys()
         assert len(self._community_treys) == 5
 
-        evaluator = treys.Evaluator()
-
         best_hand = 1_000_000
         self._num_winners = 0
 
         for player in self.players:
             if not player.folded:
-                player.final_hand_score = evaluator.evaluate(player.hole_treys, self._community_treys)
-                hand_rank = evaluator.get_rank_class(player.final_hand_score)
-                player.final_hand_name = evaluator.class_to_string(hand_rank)
+                player.hand_score = self._evaluator.evaluate(player.hole_treys, self._community_treys)
+                hand_rank = self._evaluator.get_rank_class(player.hand_score)
+                player.hand_name = self._evaluator.class_to_string(hand_rank)
 
-            if player.final_hand_score < best_hand:
-                best_hand = player.final_hand_score
+            if player.hand_score < best_hand:
+                best_hand = player.hand_score
 
         for player in self.players:
-            if best_hand == player.final_hand_score:
+            if best_hand == player.hand_score:
                 player.round_won = True
                 self._num_winners += 1
 
@@ -335,7 +371,7 @@ class Table:
                 if not player.folded:
                     seat = player.seat
                     hole_cards = player.print_cards_color(num_colors)
-                    hand_name = player.final_hand_name
+                    hand_name = player.hand_name
 
                     if player.round_won:
                         if self._num_winners == 1:
@@ -372,8 +408,6 @@ def main():
     game.random_hole_cards(7)
     game.random_hole_cards(8)
     game.random_hole_cards(9)
-    game.monte_carlo()
-    game.print_table(4)
 
     # flop
     game.random_flop()
@@ -384,6 +418,7 @@ def main():
     game.random_turn()
     game.calculate()
     game.print_table(4)
+    game.find_outs()
 
     # river
     game.random_river()

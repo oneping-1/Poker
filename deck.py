@@ -25,7 +25,7 @@ class Deck:
         i = 0
         for rank in ranks:
             for suit in suits:
-                self.cards.append(Card(rank, suit, i))
+                self.cards.append(Card(rank=rank, suit=suit, index=i))
                 i += 1
 
     def check_card(self, card_str:str):
@@ -45,7 +45,7 @@ class Deck:
 
         return None
 
-    def remove_card_from_deck(self, *,card_str:str = None, card_index:int = None, card_random:bool = None):
+    def remove_card_from_deck(self, *, card_str:str = None, card_index:int = None, card_random:bool = None):
         """
         removes a card from the deck from the card string or randomly
         """
@@ -73,3 +73,20 @@ class Deck:
             self.cards.pop(index)
             self.dead_cards.append(card)
             return card
+
+    def burn(self, *,card_str:str = None, card_index:int = None, card_random:bool = None):
+        """
+        same as remove_card_from_deck except shorter function name
+        to save space
+        """
+        if card_str is not None:
+            self.remove_card_from_deck(card_str=card_str)
+
+        elif card_index is not None:
+            self.remove_card_from_deck(card_index=card_index)
+
+        elif card_random is True:
+            self.remove_card_from_deck(card_random=True)
+
+        else:
+            raise ValueError('no correct function inputs given')

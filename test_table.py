@@ -181,3 +181,29 @@ def test_table_04():
         assert player.round_won is not True
 
     assert poker.players[7].round_won is True
+
+def test_table_05():
+    """
+    tests player out cards
+    """
+    table = Table(2)
+
+    table.set_hole_cards(1, ['Ac', 'Qh'])
+    table.set_hole_cards(2, ['Ah', 'Kh'])
+    assert len(table.deck.cards) == 48
+
+    table.flop(['8c', '3s', 'Th'])
+    table.river('9d')
+    assert len(table.deck.cards) == 44
+
+    odds = table.calculate()
+    table.find_outs()
+
+    assert odds[0] == pytest.approx(0.1591, abs=1e-3)
+    assert odds[1] == pytest.approx(0.8409, abs=1e-3)
+
+    assert len(table.players[0].outs) == 7
+
+    correct_outs = ['Js', 'Qs', 'Jd', 'Qd', 'Jh', 'Jc', 'Jc']
+    for correct in correct_outs:
+        assert correct in table.players[0].outs_string
