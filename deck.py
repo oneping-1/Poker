@@ -23,10 +23,13 @@ class Deck:
         self.dead_cards: List[Card] = []
 
         i = 0
-        for rank in ranks:
-            for suit in suits:
+        for suit in suits:
+            for rank in ranks:
                 self.cards.append(Card(rank=rank, suit=suit, index=i))
                 i += 1
+
+    def __repr__(self):
+        return f'{len(self.cards)} cards remaining'
 
     def check_card(self, card_str:str):
         """

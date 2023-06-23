@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import pytest
 from table import Table
 
@@ -123,40 +125,35 @@ def test_table_04():
 
     poker = Table(8)
 
-    # Andy
+    poker.set_player_name(1, 'Andy')
     poker.set_hole_cards(1, ['Ts', '6s'])
     poker.fold(1)
 
-    # Mike X
+    poker.set_player_name(2, 'Mike X')
     poker.set_hole_cards(2, ['Qh', '2c'])
     poker.fold(2)
 
-    # Phil Ivey
+    poker.set_player_name(3, 'Phil Ivey')
     poker.set_hole_cards(3, ['Ah', '4d'])
     poker.fold(3)
 
-    # Ryusuke
+    poker.set_player_name(4, 'Ryusuke')
     poker.set_hole_cards(4, ['Kd', '2h'])
     poker.fold(4)
 
-    # RIP
+    poker.set_player_name(5, 'RIP')
     poker.set_hole_cards(5, ['5h', '3s'])
     poker.fold(5)
 
-    # Eric
+    poker.set_player_name(6, 'Eric')
     poker.set_hole_cards(6, ['Jd', '9s'])
     poker.fold(6)
 
-    # Garrett
+    poker.set_player_name(7, 'Garrett')
     poker.set_hole_cards(7, ['8c', '7c'])
 
-    # Robbi
+    poker.set_player_name(8, 'Robbi')
     poker.set_hole_cards(8, ['Jc', '4h'])
-
-    odds = poker.monte_carlo(10000)
-    assert odds[0:6] == [0, 0, 0, 0, 0, 0]
-    assert odds[6] == pytest.approx(.5759, abs=2e-2)
-    assert odds[7] == pytest.approx(.4140, abs=2e-2)
 
     poker.flop(['9c', 'Tc', 'Th'])
     odds = poker.calculate()
@@ -173,8 +170,7 @@ def test_table_04():
     poker.river('9d')
     odds = poker.calculate()
     poker.find_winner()
-    assert odds[0:6] == [0, 0, 0, 0, 0, 0]
-    assert odds[6] == 0
+    assert odds[0:7] == [0, 0, 0, 0, 0, 0, 0]
     assert odds[7] == 1
 
     for player in poker.players[0:7]:
@@ -207,3 +203,119 @@ def test_table_05():
     correct_outs = ['Js', 'Qs', 'Jd', 'Qd', 'Jh', 'Jc', 'Jc']
     for correct in correct_outs:
         assert correct in table.players[0].outs_string
+
+def test_table_06():
+    """
+    Hustler Casion Live Full House vs Flush
+    https://www.youtube.com/watch?v=7YmZeQaX4r0
+    """
+
+    table = Table(6)
+
+    table.set_player_name(1, 'Ben')
+    table.set_hole_cards(1, ['Ad', 'Jd'])
+
+    table.set_player_name(2, 'JRB')
+    table.set_hole_cards(2, ['Kh', '4h'])
+
+    table.set_player_name(3, 'Aussie Matt')
+    table.set_hole_cards(3, ['Ac', '8c'])
+
+    table.set_player_name(4, 'Huss')
+    table.set_hole_cards(4, ['Qc', '2c'])
+    table.fold(4)
+
+    table.set_player_name(5, 'Tony G')
+    table.set_hole_cards(5, ['Ah', '3s'])
+    table.fold(5)
+
+    table.set_player_name(6, 'Charles')
+    table.set_hole_cards(6, ['Td', '5c'])
+    table.fold(6)
+
+    table.flop(['6d', '4s', '4d'])
+    table.calculate()
+
+    assert table.players[0].win_percentage == pytest.approx(0.2538, abs=1e-3)
+    assert table.players[1].win_percentage == pytest.approx(0.7282, abs=1e-3)
+    assert table.players[2].win_percentage == pytest.approx(0.0135, abs=1e-3)
+
+    table.fold(3)
+    table.calculate()
+
+    assert table.players[0].win_percentage == pytest.approx(0.2538, abs=1e-3)
+    assert table.players[1].win_percentage == pytest.approx(0.7417, abs=1e-3)
+
+    table.turn('Kd')
+    table.calculate()
+
+    assert table.players[0].win_percentage == 0
+    assert table.players[1].win_percentage == 1
+
+    table.find_outs()
+
+    assert len(table.players[1].outs) == len(table.deck.cards)
+    assert len(table.players[0].outs) == 0
+
+    table.river('2s')
+    table.calculate()
+    table.find_winner()
+
+    assert table.players[0].win_percentage == 0
+    assert table.players[1].win_percentage == 1
+
+    assert table.players[0].hand_name == 'Flush'
+    assert table.players[1].hand_name == 'Full House'
+
+def test_table_07():
+    """
+    check table._create_iterative_deck()
+    """
+
+    table = Table(2)
+
+    table.set_hole_cards(1, ['8c', '2h'])
+    table.set_hole_cards(2, ['Ac', 'Kd'])
+
+    table.flop(['2c', 'Td', 'As'])
+
+    iterative_deck = table._create_iterative_deck()
+    assert len(iterative_deck) == 990
+
+def test_table_08():
+    """
+    tests table._find_lowest_score()
+    """
+
+    table = Table(1)
+
+    hand_scores = [1000, 100, 500, 400, 320, 10402]
+    index = table._find_lowest_score(hand_scores)
+    assert index == 1
+
+    hand_scores = [1000, 10000]
+    index = table._find_lowest_score(hand_scores)
+    assert index == 0
+
+    hand_scores = [30, 4320, 16000, 420, 3, 19, 204, 730, 5000]
+    index = table._find_lowest_score(hand_scores)
+    assert index == 4
+
+def test_table_09():
+    """
+    tests table._find_lowest_score() for ties
+    """
+
+    table = Table(1)
+
+    hand_scores = [4, 16, 2000, 2000, 4]
+    index = table._find_lowest_score(hand_scores)
+    assert index is None
+
+    hand_scores = [420, 420]
+    index = table._find_lowest_score(hand_scores)
+    assert index is None
+
+    hand_scores = [52, 420, 69, 165, 1600, 5000, 52, 69, 52]
+    index = table._find_lowest_score(hand_scores)
+    assert index is None

@@ -64,6 +64,12 @@ class Table:
         """
         self.players[seat_num-1].fold()
 
+    def set_player_name(self, seat_num:int, name:str):
+        """
+        sets the players name from the table class
+        """
+        self.players[seat_num-1].set_name(name_str=name)
+
     def set_hole_cards(self, seat_num:int, hole_cards:List[str]):
         """
         checks if both cards exist before giving them to a player
@@ -147,6 +153,7 @@ class Table:
         """
         evaluator = treys.Evaluator()
         win_percentages: List[float] = []
+        self._create_community_treys()
 
         if len(self._community_treys) == 5:
             self.find_winner()
@@ -166,7 +173,8 @@ class Table:
                 if not player.folded:
                     player.temp_hand_score = evaluator.evaluate(player.hole_treys, combo)
 
-            winner_index = self._find_lowest_score()
+            hand_scores = [player.temp_hand_score for player in self.players]
+            winner_index = self._find_lowest_score(hand_scores)
 
             if winner_index is not None:
                 self.players[winner_index].round_wins += 1
@@ -195,20 +203,18 @@ class Table:
 
         return possible_combinations
 
-    def _find_lowest_score(self) -> int:
+    def _find_lowest_score(self, hand_scores: List[int]) -> int:
         """
         finds the winner based of each players hand
         returns None if there is a tie
         returns seat index (seat num - 1) if no tie
         """
-        scores = [player.temp_hand_score for player in self.players]
-
-        sorted_scores = sorted(scores)
+        sorted_scores = sorted(hand_scores)
 
         if sorted_scores[0] == sorted_scores[1]:
             return None
         else:
-            return scores.index(sorted_scores[0])
+            return hand_scores.index(sorted_scores[0])
 
     def monte_carlo(self, num_runs=1500):
         """
@@ -245,7 +251,8 @@ class Table:
                 if not player.folded:
                     player.temp_hand_score = t_e.evaluate(player.hole_treys, temp_community_treys)
 
-            winner_index = self._find_lowest_score()
+            hand_scores = [player.temp_hand_score for player in self.players]
+            winner_index = self._find_lowest_score(hand_scores)
 
             if winner_index is not None:
                 self.players[winner_index].round_wins += 1

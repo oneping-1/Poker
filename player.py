@@ -37,6 +37,10 @@ class Player:
         self.round_wins = 0
         self.win_percentage = 0
 
+    def __repr__(self):
+        hole_card_strings = [card.string for card in self.hole_cards]
+        return f'seat={self.seat} | hole_cards={hole_card_strings} | fold={self.folded}'
+
     def set_name(self, name_str:str):
         """
         sets the players name
@@ -61,6 +65,7 @@ class Player:
         makes the fold status true
         """
         self.folded = True
+        self.win_percentage = 0
 
     def set_hole_cards(self, hole_cards:List[Card]):
         """
